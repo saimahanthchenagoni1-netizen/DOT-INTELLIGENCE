@@ -2,8 +2,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Message, AppMode, User } from '../types';
-import { streamChatResponse } from '../services/gemini';
+import { Message, AppMode, User } from '../types.ts';
+import { streamChatResponse } from '../services/gemini.ts';
 
 interface ChatInterfaceProps {
   messages: Message[];
@@ -141,8 +141,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, setMessages, mo
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               {[
-                { label: 'Research Directive', desc: 'Synthesize a study guide for the French Revolution', icon: 'book' },
-                { label: 'Code Solution', desc: 'Explain how to use Recursion in JavaScript with clear examples', icon: 'code' },
+                { label: 'Research Directive', desc: 'Synthesize a study guide for the French Revolution' },
+                { label: 'Code Solution', desc: 'Explain how to use Recursion in JavaScript with clear examples' },
               ].map((item, idx) => (
                 <button 
                   key={idx}

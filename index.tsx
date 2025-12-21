@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import App from './App';
+import App from './App.tsx';
 
 const container = document.getElementById('root');
 
@@ -15,6 +15,7 @@ if (container) {
     );
   } catch (error) {
     console.error("Fatal: DOT failed to mount to the DOM.", error);
+    container.innerHTML = `<div style="color: red; padding: 20px;">Mount Error: ${error instanceof Error ? error.message : String(error)}</div>`;
   }
 } else {
   console.error("Critical: Root element '#root' was not found in the DOM.");

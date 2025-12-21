@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, GenerateContentResponse, Type, Modality } from "@google/genai";
-import { Message, AppMode } from "../types";
+import { Message, AppMode } from "../types.ts";
 
 const MODEL_MAP = {
   [AppMode.CHAT]: 'gemini-3-flash-preview',
@@ -15,7 +15,6 @@ const MODEL_MAP = {
 export const getGeminiClient = () => {
   let apiKey = "";
   try {
-    // Attempt to read from multiple potential locations for environment variables
     apiKey = (window as any).process?.env?.API_KEY || (typeof process !== 'undefined' ? process.env.API_KEY : "") || "";
   } catch (e) {
     console.error("Failed to safely read API Key:", e);

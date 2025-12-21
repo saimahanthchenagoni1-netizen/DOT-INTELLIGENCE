@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { AppMode, ChatSession, Message, User, AppSettings } from './types';
-import ChatInterface from './components/ChatInterface';
-import VoiceInterface from './components/VoiceInterface';
-import SettingsModal from './components/SettingsModal';
-import Onboarding from './components/Onboarding';
+import { AppMode, ChatSession, Message, User, AppSettings } from './types.ts';
+import ChatInterface from './components/ChatInterface.tsx';
+import VoiceInterface from './components/VoiceInterface.tsx';
+import SettingsModal from './components/SettingsModal.tsx';
+import Onboarding from './components/Onboarding.tsx';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
