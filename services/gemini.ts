@@ -10,14 +10,14 @@ const MODEL_MAP = {
 
 /**
  * Creates a fresh instance of the Gemini AI client.
- * Using a factory ensures we always pick up the latest environment variables 
- * in serverless or edge environments like Vercel.
+ * Defensive initialization ensures we don't crash on Vercel/GitHub if the key is initially undefined.
  */
 export const getGeminiClient = () => {
-  if (!process.env.API_KEY) {
-    console.error("DOT Error: API_KEY is missing from environment variables.");
+  const apiKey = (window as any).process?.env?.API_KEY || process.env.API_KEY || "";
+  if (!apiKey) {
+    console.warn("DOT Warning: API_KEY is not defined in the environment.");
   }
-  return new GoogleGenAI({ apiKey: process.env.API_KEY });
+  return new GoogleGenAI({ apiKey });
 };
 
 export const streamChatResponse = async (
@@ -35,16 +35,18 @@ export const streamChatResponse = async (
   }));
 
   const config: any = {
-    systemInstruction: `You are DOT, a specialized high-performance AI designed to assist students with learning, research, and academic excellence. 
+    systemInstruction: `You are DOT, a specialized high-performance AI hub for students. 
 
-    STRICT OUTPUT GUIDELINES:
-    1. ALWAYS use professional Markdown structure.
-    2. Use ## and ### for clear sectioning.
-    3. Use tables for comparisons (e.g., comparing historical dates, scientific laws, or mathematical formulas).
-    4. Use bold text for key terminology.
-    5. Provide "Pro-Tips" for studying or further reading at the end of long responses.
+    CORE MANDATE:
+    You MUST provide PERFECTLY STRUCTURED responses using Markdown.
     
-    TONE: Intellectual, supportive, and clear. Avoid jargon unless explaining it.`,
+    1. HIERARCHY: Use ## for main sections and ### for sub-sections.
+    2. CLARITY: Use bold text (**concept**) for key terms when they are first introduced.
+    3. LISTS: Use bulleted or numbered lists for steps, features, or complex points.
+    4. TABLES: Use tables for comparisons between historical figures, scientific concepts, or data.
+    5. CITATIONS: If search is enabled, integrate findings seamlessly.
+    
+    TONE: Intellectual, supportive, and precise. You are an academic architect. Help the student visualize the logic of the subject.`,
   };
 
   if (mode === AppMode.DEEP_THINK) {
@@ -72,10 +74,17 @@ export const streamChatResponse = async (
       
       const chunks = c.candidates?.[0]?.groundingMetadata?.groundingChunks;
       if (chunks) {
-        groundingLinks = chunks.map((chunk: any) => ({
+        const newLinks = chunks.map((chunk: any) => ({
           title: chunk.web?.title || chunk.web?.uri || "Source",
           uri: chunk.web?.uri
         })).filter((link: any) => link.uri);
+        
+        // Accumulate links without duplicates
+        newLinks.forEach((link: any) => {
+          if (!groundingLinks.find(l => l.uri === link.uri)) {
+            groundingLinks.push(link);
+          }
+        });
       }
 
       onChunk(textPart);
