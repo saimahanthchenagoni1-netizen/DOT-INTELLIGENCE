@@ -58,7 +58,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, setMessages, mo
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      alert(`Asset "${file.name}" uploaded to DOT node.`);
+      alert(`Asset "${file.name}" uploaded to DOT node for analysis.`);
     }
   };
 
@@ -119,7 +119,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, setMessages, mo
       console.error(err);
       setMessages(prev => [
         ...prev.slice(0, -1),
-        { ...botPlaceholder, content: "Connectivity error. DOT core re-routing.", isStreaming: false }
+        { ...botPlaceholder, content: "Direct node communication failed. Please check your API key settings in Vercel/Github environment.", isStreaming: false }
       ]);
     } finally {
       setIsTyping(false);
@@ -136,18 +136,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, setMessages, mo
           <div className="h-full flex flex-col justify-center max-w-3xl mx-auto animate-in fade-in duration-1000">
             <h1 className="text-7xl font-black tracking-tighter mb-10 text-center leading-[0.9]">
               <span className="text-indigo-500">Hello {user.name},</span><br />
-              <span className="opacity-30">I'm ready for your questions.</span>
+              <span className="opacity-30">I'm ready to answer any of your questions.</span>
             </h1>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               {[
-                { label: 'Academic Help', desc: 'Synthesize the key themes of "The Great Gatsby"', icon: 'book' },
-                { label: 'STEM Analysis', desc: 'Step-by-step solution for the Schrodinger equation basics', icon: 'atom' },
+                { label: 'Research Directive', desc: 'Synthesize a study guide for the French Revolution', icon: 'book' },
+                { label: 'Code Solution', desc: 'Explain how to use Recursion in JavaScript with clear examples', icon: 'code' },
               ].map((item, idx) => (
                 <button 
                   key={idx}
                   onClick={() => { setInput(item.desc); }}
-                  className="p-10 bg-white/5 border border-white/5 rounded-[3rem] text-left transition-all hover:border-indigo-500/30 hover:bg-white/[0.07] group backdrop-blur-sm"
+                  className="p-10 bg-white/5 border border-white/5 rounded-[3rem] text-left transition-all hover:border-indigo-500/40 hover:bg-white/[0.07] group backdrop-blur-sm"
                 >
                   <p className="text-[10px] font-black uppercase tracking-[0.4em] mb-4 text-indigo-400 group-hover:text-indigo-300">{item.label}</p>
                   <p className="text-lg font-bold leading-tight opacity-70 group-hover:opacity-100">{item.desc}</p>
@@ -171,13 +171,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, setMessages, mo
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-5">
                     <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">
-                      {msg.role === 'assistant' ? 'DOT INTELLIGENCE' : user.name.toUpperCase()}
+                      {msg.role === 'assistant' ? 'DOT HUB' : user.name.toUpperCase()}
                     </p>
                     {msg.role === 'assistant' && !msg.isStreaming && (
                       <button 
                         onClick={() => speakText(msg.content)}
                         className="p-2 hover:bg-white/5 rounded-xl text-gray-600 hover:text-white transition-all opacity-0 group-hover:opacity-100"
-                        title="Vocalize"
+                        title="Vocalize response"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
                       </button>

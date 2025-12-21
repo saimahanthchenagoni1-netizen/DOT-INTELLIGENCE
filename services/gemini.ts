@@ -8,7 +8,15 @@ const MODEL_MAP = {
   [AppMode.VOICE]: 'gemini-2.5-flash-native-audio-preview-09-2025'
 };
 
+/**
+ * Creates a fresh instance of the Gemini AI client.
+ * Using a factory ensures we always pick up the latest environment variables 
+ * in serverless or edge environments like Vercel.
+ */
 export const getGeminiClient = () => {
+  if (!process.env.API_KEY) {
+    console.error("DOT Error: API_KEY is missing from environment variables.");
+  }
   return new GoogleGenAI({ apiKey: process.env.API_KEY });
 };
 
@@ -27,18 +35,16 @@ export const streamChatResponse = async (
   }));
 
   const config: any = {
-    systemInstruction: `You are DOT, a specialized high-performance AI hub for students. 
+    systemInstruction: `You are DOT, a specialized high-performance AI designed to assist students with learning, research, and academic excellence. 
 
-    CORE MANDATE:
-    You MUST provide PERFECTLY STRUCTURED responses using Markdown.
+    STRICT OUTPUT GUIDELINES:
+    1. ALWAYS use professional Markdown structure.
+    2. Use ## and ### for clear sectioning.
+    3. Use tables for comparisons (e.g., comparing historical dates, scientific laws, or mathematical formulas).
+    4. Use bold text for key terminology.
+    5. Provide "Pro-Tips" for studying or further reading at the end of long responses.
     
-    1. HIERARCHY: Use ## for main sections and ### for sub-sections.
-    2. CLARITY: Use bold text (**concept**) for key terms when they are first introduced.
-    3. LISTS: Use bulleted or numbered lists for steps, features, or complex points.
-    4. TABLES: Use tables for comparisons between historical figures, scientific concepts, or data.
-    5. CITATIONS: If search is enabled, integrate findings seamlessly.
-    
-    TONE: Intellectual, supportive, and precise. You are an academic architect. Help the student visualize the logic of the subject.`,
+    TONE: Intellectual, supportive, and clear. Avoid jargon unless explaining it.`,
   };
 
   if (mode === AppMode.DEEP_THINK) {

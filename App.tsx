@@ -124,10 +124,10 @@ const App: React.FC = () => {
   return (
     <div className={`flex flex-col h-screen overflow-hidden transition-all duration-500 ${isLight ? 'bg-[#f8f9fa] text-[#1a1a1a]' : 'bg-[#0b0b0c] text-[#f0f0f0]'}`}>
       <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] w-[95%] max-w-6xl pointer-events-none">
-        <div className={`${isLight ? 'bg-white/90 border-gray-200' : 'bg-[#141417]/90 border-white/[0.05]'} backdrop-blur-2xl rounded-full px-8 py-3 flex items-center justify-between shadow-2xl pointer-events-auto border`}>
+        <div className={`${isLight ? 'bg-white/90 border-gray-200 shadow-xl' : 'bg-[#080808]/95 border-white/[0.05] shadow-[0_20px_50px_rgba(0,0,0,0.8)]'} backdrop-blur-2xl rounded-full px-8 py-3 flex items-center justify-between pointer-events-auto border`}>
           
           <div className="flex items-center gap-4 cursor-pointer group" onClick={() => handleNewChat()}>
-            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:scale-105 ${isLight ? 'bg-black shadow-lg shadow-black/10' : 'bg-white shadow-lg shadow-white/5'}`}>
+            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:scale-105 group-hover:rotate-6 ${isLight ? 'bg-black shadow-lg shadow-black/10' : 'bg-white shadow-lg shadow-white/5'}`}>
                <div className={`w-3.5 h-3.5 rounded-full ${isLight ? 'bg-white' : 'bg-black'}`} />
             </div>
             <span className={`text-2xl font-black tracking-tighter ${isLight ? 'text-black' : 'text-white'}`}>DOT</span>
