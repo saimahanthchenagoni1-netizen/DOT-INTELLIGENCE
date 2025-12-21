@@ -1,0 +1,7 @@
+{
+  "name": "DOT AI",
+  "description": "The ultimate intelligence hub for deep reasoning and real-time knowledge.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
