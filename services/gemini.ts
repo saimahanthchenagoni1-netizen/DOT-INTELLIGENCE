@@ -10,12 +10,19 @@ const MODEL_MAP = {
 
 /**
  * Creates a fresh instance of the Gemini AI client.
- * Defensive initialization ensures we don't crash on Vercel/GitHub if the key is initially undefined.
+ * Safe access for environments where process might not be defined.
  */
 export const getGeminiClient = () => {
-  const apiKey = (window as any).process?.env?.API_KEY || process.env.API_KEY || "";
+  let apiKey = "";
+  try {
+    // Attempt to read from multiple potential locations for environment variables
+    apiKey = (window as any).process?.env?.API_KEY || (typeof process !== 'undefined' ? process.env.API_KEY : "") || "";
+  } catch (e) {
+    console.error("Failed to safely read API Key:", e);
+  }
+  
   if (!apiKey) {
-    console.warn("DOT Warning: API_KEY is not defined in the environment.");
+    console.warn("DOT Warning: API_KEY is missing. Ensure your Vercel/GitHub environment variables are set.");
   }
   return new GoogleGenAI({ apiKey });
 };
@@ -79,7 +86,6 @@ export const streamChatResponse = async (
           uri: chunk.web?.uri
         })).filter((link: any) => link.uri);
         
-        // Accumulate links without duplicates
         newLinks.forEach((link: any) => {
           if (!groundingLinks.find(l => l.uri === link.uri)) {
             groundingLinks.push(link);
