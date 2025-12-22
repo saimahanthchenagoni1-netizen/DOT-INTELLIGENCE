@@ -6,8 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DOT | Intelligence Hub</title>
   <script>
-    // 1. Critical Environment Polyfill (Must be first)
-    window.process = { env: { API_KEY: "" } };
+    // 1. Critical Environment Polyfill (Only if not provided by host)
+    window.process = window.process || { env: { API_KEY: "" } };
     
     // 2. Global Initialization Error Watchdog
     window.onerror = function(msg, url, line, col, error) {
@@ -27,6 +27,11 @@
       }
       return false;
     };
+
+    // 3. Loader Safety Release (Don't stay stuck forever if something blocks class addition)
+    setTimeout(() => {
+      document.body.classList.add('app-ready');
+    }, 5000);
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -35,7 +40,6 @@
   <style>
     body { font-family: 'Outfit', sans-serif; background-color: #0b0b0c; color: #f0f0f0; margin: 0; overflow: hidden; }
     
-    /* Loader only hides when body has .app-ready class */
     #initial-loader { 
       position: fixed; 
       inset: 0; 
@@ -45,13 +49,13 @@
       align-items: center; 
       justify-content: center; 
       z-index: 100000; 
-      transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); 
+      transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), transform 0.8s cubic-bezier(0.4, 0, 0.2, 1); 
     }
     
     .app-ready #initial-loader { 
       opacity: 0; 
       pointer-events: none; 
-      transform: scale(1.05);
+      transform: scale(1.1);
     }
     
     .loader-dot { 
@@ -88,8 +92,8 @@
     "@google/genai": "https://esm.sh/@google/genai@1.34.0",
     "react-markdown": "https://esm.sh/react-markdown@9.0.1?external=react",
     "remark-gfm": "https://esm.sh/remark-gfm@4.0.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/"
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
   }
 }
 </script>
@@ -108,6 +112,9 @@
   <div id="dot-cursor"></div>
   <div id="dot-cursor-ring"></div>
   <div id="root"></div>
+
+  <!-- Entry Point -->
+  <script type="module" src="./index.tsx"></script>
 
   <script>
     const cursor = document.getElementById('dot-cursor');
