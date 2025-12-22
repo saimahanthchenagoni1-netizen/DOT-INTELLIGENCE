@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { getGeminiClient, encode, decode, decodeAudioData } from '../services/gemini';
+import { getGeminiClient, encode, decode, decodeAudioData } from '../services/gemini.ts';
 import { LiveServerMessage, Modality } from '@google/genai';
 
 const VoiceInterface: React.FC = () => {

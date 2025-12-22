@@ -68,6 +68,11 @@
       50% { transform: translateY(-30px) rotate(180deg); border-radius: 50%; } 
     }
 
+    @keyframes slide {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(300%); }
+    }
+
     .prose h1, .prose h2, .prose h3 { color: inherit; font-weight: 800; }
     .custom-cursor-active { cursor: none !important; }
     #dot-cursor { width: 12px; height: 12px; background: white; border-radius: 50%; position: fixed; pointer-events: none; z-index: 10000; mix-blend-mode: difference; display: none; }
@@ -94,7 +99,7 @@
     <div class="loader-dot"></div>
     <div style="margin-top: 30px; text-align: center;">
       <p style="font-weight: 900; letter-spacing: 0.8em; font-size: 11px; color: white; text-transform: uppercase;">Initializing DOT</p>
-      <div style="width: 100px; h-px; background: rgba(255,255,255,0.1); margin: 15px auto; overflow: hidden; border-radius: 10px;">
+      <div style="width: 100px; height: 2px; background: rgba(255,255,255,0.1); margin: 15px auto; overflow: hidden; border-radius: 10px;">
         <div style="width: 30%; height: 2px; background: white; animation: slide 1.5s infinite ease-in-out;"></div>
       </div>
     </div>
@@ -105,11 +110,6 @@
   <div id="root"></div>
 
   <script>
-    @keyframes slide {
-      0% { transform: translateX(-100%); }
-      100% { transform: translateX(300%); }
-    }
-
     const cursor = document.getElementById('dot-cursor');
     const ring = document.getElementById('dot-cursor-ring');
     document.addEventListener('mousemove', (e) => {

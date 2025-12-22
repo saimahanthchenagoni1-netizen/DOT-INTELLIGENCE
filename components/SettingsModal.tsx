@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { AppSettings } from '../types';
+import { AppSettings } from '../types.ts';
 
 interface SettingsModalProps {
   isOpen: boolean;
