@@ -12,6 +12,11 @@ const App: React.FC = () => {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isModesOpen, setIsModesOpen] = useState(false);
   
+  // Signal that the app is mounted and ready
+  useEffect(() => {
+    document.body.classList.add('app-ready');
+  }, []);
+
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = localStorage.getItem('dot_app_settings');
     return saved ? JSON.parse(saved) : {
