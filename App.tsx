@@ -1,233 +1,234 @@
 
 import React, { useState, useEffect } from 'react';
-import { AppMode, ChatSession, Message, User, AppSettings } from './types.ts';
-import ChatInterface from './components/ChatInterface.tsx';
-import VoiceInterface from './components/VoiceInterface.tsx';
-import SettingsModal from './components/SettingsModal.tsx';
-import Onboarding from './components/Onboarding.tsx';
+import Sidebar from './components/Sidebar';
+import Home from './components/Home';
+import Quiz from './components/Quiz';
+import Results from './components/Results';
+import Settings from './components/Settings';
+import Flashcards from './components/Flashcards';
+import BackgroundEffects from './components/BackgroundEffects';
+import { generateFlashcards } from './services/geminiService';
+import { User, QuizQuestion, AppSettings, SavedQuiz, SavedFlashcardSet, SavedStudyGuide, Flashcard } from './types';
+
+const GRADES = [
+  "1st Grade", "2nd Grade", "3rd Grade", "4th Grade", "5th Grade",
+  "6th Grade", "7th Grade", "8th Grade", "9th Grade", "10th Grade",
+  "11th Grade", "12th Grade", "College Level"
+];
+
+const SOURCES = [
+  "TikTok", "Instagram", "YouTube", "Twitter / X", "Facebook", "A Friend", "Other"
+];
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [isModesOpen, setIsModesOpen] = useState(false);
+  const [activeView, setActiveView] = useState('home');
+  const [currentContext, setCurrentContext] = useState('');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   
-  // Signal that the app is mounted and ready
-  useEffect(() => {
-    document.body.classList.add('app-ready');
-  }, []);
+  const [isQuizMode, setIsQuizMode] = useState(false);
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[] | null>(null);
+  const [quizAnswers, setQuizAnswers] = useState<Record<number, string> | null>(null);
+  const [isFlashcardMode, setIsFlashcardMode] = useState(false);
+  const [activeCards, setActiveCards] = useState<Flashcard[]>([]);
 
-  const [settings, setSettings] = useState<AppSettings>(() => {
-    const saved = localStorage.getItem('dot_app_settings');
-    return saved ? JSON.parse(saved) : {
-      theme: 'dark',
-      modelQuality: 'high',
-      showGrounding: true,
-      clearHistoryOnLogout: false,
-      snowEnabled: false,
-      customCursorEnabled: true
-    };
+  const [savedQuizzes, setSavedQuizzes] = useState<SavedQuiz[]>([]);
+  const [savedGuides, setSavedGuides] = useState<SavedStudyGuide[]>([]);
+
+  const [settings, setSettings] = useState<AppSettings>({
+    snowEffect: false,
+    mouseInteraction: false, 
+    themeColor: 'purple' 
   });
 
-  const [mode, setMode] = useState<AppMode>(AppMode.CHAT);
-  const [sessions, setSessions] = useState<ChatSession[]>([]);
-  const [currentSessionId, setCurrentSessionId] = useState<string>('');
+  const [onboardingForm, setOnboardingForm] = useState({ 
+    name: '', 
+    grade: '', 
+    source: '' 
+  });
+  const [isStarting, setIsStarting] = useState(false);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('dot_user_profile');
-    if (savedUser) setUser(JSON.parse(savedUser));
-
-    const savedSessions = localStorage.getItem('dot_chat_history');
-    if (savedSessions) {
-      const parsed = JSON.parse(savedSessions);
-      setSessions(parsed);
-      if (parsed.length > 0) {
-        setCurrentSessionId(parsed[0].id);
-      } else {
-        handleNewChat();
-      }
-    } else {
-      handleNewChat();
+    const saved = localStorage.getItem('dot_ai_user');
+    if (saved) {
+      try { setUser(JSON.parse(saved)); } catch (e) { localStorage.removeItem('dot_ai_user'); }
     }
+    const sQuizzes = localStorage.getItem('dot_saved_quizzes');
+    if (sQuizzes) setSavedQuizzes(JSON.parse(sQuizzes));
+    
+    const sGuides = localStorage.getItem('dot_saved_guides');
+    if (sGuides) setSavedGuides(JSON.parse(sGuides));
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem('dot_app_settings', JSON.stringify(settings));
-    if (settings.theme === 'light') document.body.classList.add('light-mode');
-    else document.body.classList.remove('light-mode');
-
-    if (settings.snowEnabled) document.body.classList.add('snow-active');
-    else document.body.classList.remove('snow-active');
-
-    if (settings.customCursorEnabled) document.body.classList.add('custom-cursor-active');
-    else document.body.classList.remove('custom-cursor-active');
-  }, [settings]);
-
-  const handleOnboardingComplete = (newUser: User) => {
-    setUser(newUser);
-    localStorage.setItem('dot_user_profile', JSON.stringify(newUser));
-    handleNewChat();
-  };
-
-  const handleClearHistory = () => {
-    setSessions([]);
-    const newId = Date.now().toString();
-    const initialSession = {
-      id: newId,
-      title: 'Initial session',
-      messages: [],
-      createdAt: Date.now()
-    };
-    setSessions([initialSession]);
-    setCurrentSessionId(newId);
-    localStorage.removeItem('dot_chat_history');
-    setIsSettingsOpen(false);
-  };
-
-  useEffect(() => {
-    if (sessions.length > 0) {
-      localStorage.setItem('dot_chat_history', JSON.stringify(sessions));
-    }
-  }, [sessions]);
-
-  const currentSession = sessions.find(s => s.id === currentSessionId);
-
-  const handleNewChat = () => {
-    const newId = Date.now().toString();
-    const newSession: ChatSession = {
-      id: newId,
-      title: 'New conversation',
-      messages: [],
-      createdAt: Date.now()
-    };
-    setSessions(prev => [newSession, ...prev]);
-    setCurrentSessionId(newId);
-    setIsHistoryOpen(false);
-  };
-
-  const setMessages = (update: React.SetStateAction<Message[]>) => {
-    setSessions(prev => prev.map(s => {
-      if (s.id === currentSessionId) {
-        const nextMsgs = typeof update === 'function' ? update(s.messages) : update;
-        let newTitle = s.title;
-        if (s.messages.length === 0 && nextMsgs.length > 0) {
-          const firstContent = nextMsgs[0].content;
-          newTitle = firstContent.slice(0, 30) + (firstContent.length > 30 ? '...' : '');
-        }
-        return { ...s, messages: nextMsgs, title: newTitle };
+  const handleActionRequest = async (type: 'quiz' | 'flashcards', context: string) => {
+    setCurrentContext(context);
+    if (type === 'quiz') {
+      setIsQuizMode(true);
+    } else {
+      try {
+        const cards = await generateFlashcards(context);
+        setActiveCards(cards);
+        setIsFlashcardMode(true);
+      } catch (e) {
+        alert("Could not generate flashcards.");
       }
-      return s;
-    }));
+    }
+  };
+
+  const handleQuizComplete = (questions: QuizQuestion[], answers: Record<number, string>) => {
+    setQuizQuestions(questions);
+    setQuizAnswers(answers);
+    
+    const newQuiz: SavedQuiz = {
+      id: Date.now().toString(),
+      title: questions[0]?.question.slice(0, 30) + "...",
+      date: new Date().toLocaleDateString(),
+      score: 0, 
+      total: questions.length,
+      questions,
+      answers
+    };
+    const updated = [newQuiz, ...savedQuizzes];
+    setSavedQuizzes(updated);
+    localStorage.setItem('dot_saved_quizzes', JSON.stringify(updated));
+  };
+
+  const handleOnboardingSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!onboardingForm.grade || !onboardingForm.source) {
+      alert("Please select your level and source.");
+      return;
+    }
+    setIsStarting(true);
+    setTimeout(() => {
+      const newUser = { 
+        username: onboardingForm.name, 
+        email: onboardingForm.grade 
+      };
+      setUser(newUser);
+      localStorage.setItem('dot_ai_user', JSON.stringify(newUser));
+      localStorage.setItem('dot_ai_onboarding', JSON.stringify(onboardingForm));
+      setIsStarting(false);
+    }, 1200);
   };
 
   if (!user) {
-    return <Onboarding onComplete={handleOnboardingComplete} />;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black p-6 font-sans">
+        <div className="max-w-lg w-full animate-in fade-in zoom-in duration-1000">
+          <div className="text-center mb-10">
+            <div className="w-20 h-20 bg-[#111] border border-white/5 rounded-[1.5rem] flex items-center justify-center shadow-2xl mx-auto mb-6">
+              <div className="dot-logo-circle"></div>
+            </div>
+            <h1 className="text-6xl font-black text-white mb-2 tracking-tighter">DOT AI</h1>
+            <p className="text-gray-500 text-lg uppercase tracking-[0.2em] font-bold">Dream Big</p>
+          </div>
+          
+          <div className="glass-card border border-white/5 p-10 rounded-[3rem] shadow-2xl space-y-8">
+            <h2 className="text-2xl font-black text-center text-white">Let's get started</h2>
+            
+            <form onSubmit={handleOnboardingSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Name</label>
+                <input 
+                  type="text" 
+                  placeholder="Enter your name" 
+                  required
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-white outline-none focus:border-white/30 transition-all font-bold text-lg" 
+                  value={onboardingForm.name} 
+                  onChange={e => setOnboardingForm({...onboardingForm, name: e.target.value})} 
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Grade Level</label>
+                <select 
+                  required
+                  className="w-full bg-[#111] border border-white/10 rounded-2xl p-5 text-white outline-none focus:border-white/30 transition-all cursor-pointer font-semibold appearance-none"
+                  value={onboardingForm.grade}
+                  onChange={e => setOnboardingForm({...onboardingForm, grade: e.target.value})}
+                >
+                  <option value="" disabled>Choose your level</option>
+                  {GRADES.map(g => <option key={g} value={g}>{g}</option>)}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Found us via</label>
+                <select 
+                  required
+                  className="w-full bg-[#111] border border-white/10 rounded-2xl p-5 text-white outline-none focus:border-white/30 transition-all cursor-pointer font-semibold appearance-none"
+                  value={onboardingForm.source}
+                  onChange={e => setOnboardingForm({...onboardingForm, source: e.target.value})}
+                >
+                  <option value="" disabled>Choose an option</option>
+                  {SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+              
+              <button 
+                type="submit" 
+                disabled={isStarting}
+                className="w-full py-6 bg-white text-black font-black rounded-3xl transition-all shadow-2xl flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50 text-lg hover:bg-neutral-200"
+              >
+                {isStarting ? <div className="w-6 h-6 border-2 border-black border-t-transparent rounded-full animate-spin"></div> : 'START JOURNEY'}
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  const isLight = settings.theme === 'light';
+  const renderContent = () => {
+    if (activeView === 'settings') return <Settings settings={settings} setSettings={setSettings} />;
+    if (activeView === 'quizzes') return (
+      <div className="max-w-5xl mx-auto py-20 px-8">
+        <h2 className="text-5xl font-black mb-12 text-white">My Quizzes</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {savedQuizzes.map(q => (
+            <div key={q.id} className="glass-card p-10 rounded-[2.5rem] border-white/5 shadow-xl hover:scale-[1.02] transition-all">
+              <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{q.date}</span>
+              <h3 className="text-2xl font-bold text-white mt-3">{q.title}</h3>
+              <div className="mt-10 flex gap-4">
+                <button className="px-8 py-3 bg-white text-black rounded-2xl text-xs font-black">RETAKE</button>
+                <button className="px-8 py-3 bg-white/5 text-white rounded-2xl text-xs font-black">RESULTS</button>
+              </div>
+            </div>
+          ))}
+          {savedQuizzes.length === 0 && <p className="text-gray-500 py-10">No quizzes taken yet.</p>}
+        </div>
+      </div>
+    );
+    if (activeView === 'flashcards' && !isFlashcardMode) return (
+       <div className="max-w-5xl mx-auto py-20 px-8">
+        <h2 className="text-5xl font-black mb-12 text-white">Flashcards</h2>
+        <div className="glass-card rounded-[3rem] p-16 text-center text-gray-500">
+          <p className="text-xl mb-8">Ready to test your memory?</p>
+          <button onClick={() => setActiveView('home')} className="px-12 py-4 bg-white text-black rounded-2xl font-black">START CHATTING</button>
+        </div>
+      </div>
+    );
+    if (isFlashcardMode) return <Flashcards cards={activeCards} onExit={() => setIsFlashcardMode(false)} />;
+    if (quizQuestions && quizAnswers) return <Results questions={quizQuestions} answers={quizAnswers} onBackToHome={() => { setQuizQuestions(null); setQuizAnswers(null); setIsQuizMode(false); setActiveView('home'); }} />;
+    if (isQuizMode) return <Quiz context={currentContext} onQuizComplete={handleQuizComplete} onExit={() => setIsQuizMode(false)} />;
+
+    return <Home userName={user.username} onContentProcessed={(c, e) => setCurrentContext(c + "\n" + e)} onActionRequest={handleActionRequest} />;
+  };
 
   return (
-    <div className={`flex flex-col h-screen overflow-hidden transition-all duration-500 ${isLight ? 'bg-[#f8f9fa] text-[#1a1a1a]' : 'bg-[#0b0b0c] text-[#f0f0f0]'}`}>
-      <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] w-[95%] max-w-6xl pointer-events-none">
-        <div className={`${isLight ? 'bg-white/90 border-gray-200 shadow-xl' : 'bg-[#080808]/95 border-white/[0.05] shadow-[0_20px_50px_rgba(0,0,0,0.8)]'} backdrop-blur-2xl rounded-full px-8 py-3 flex items-center justify-between pointer-events-auto border`}>
-          
-          <div className="flex items-center gap-4 cursor-pointer group" onClick={() => handleNewChat()}>
-            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:scale-105 group-hover:rotate-6 ${isLight ? 'bg-black shadow-lg shadow-black/10' : 'bg-white shadow-lg shadow-white/5'}`}>
-               <div className={`w-3.5 h-3.5 rounded-full ${isLight ? 'bg-white' : 'bg-black'}`} />
-            </div>
-            <span className={`text-2xl font-black tracking-tighter ${isLight ? 'text-black' : 'text-white'}`}>DOT</span>
-          </div>
-
-          <div className="hidden md:flex items-center gap-10">
-            <div className="relative">
-              <button 
-                onClick={() => setIsModesOpen(!isModesOpen)}
-                onBlur={() => setTimeout(() => setIsModesOpen(false), 200)}
-                className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-gray-500 hover:text-indigo-500 transition-colors"
-              >
-                Intelligence Mode
-                <svg className={`w-3 h-3 transition-transform duration-300 ${isModesOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" /></svg>
-              </button>
-              {isModesOpen && (
-                <div className={`absolute top-full mt-4 left-1/2 -translate-x-1/2 w-48 rounded-3xl shadow-2xl p-2 animate-in fade-in slide-in-from-top-2 duration-300 border ${isLight ? 'bg-white border-gray-100' : 'bg-[#1a1a1e] border-white/5'}`}>
-                  <button onClick={() => setMode(AppMode.CHAT)} className={`w-full text-left px-5 py-3 rounded-2xl text-[10px] font-black tracking-widest transition-all ${mode === AppMode.CHAT ? (isLight ? 'bg-black text-white' : 'bg-white text-black') : 'text-gray-500 hover:bg-gray-500/5'}`}>CORE</button>
-                  <button onClick={() => setMode(AppMode.DEEP_THINK)} className={`w-full text-left px-5 py-3 rounded-2xl text-[10px] font-black tracking-widest transition-all ${mode === AppMode.DEEP_THINK ? (isLight ? 'bg-black text-white' : 'bg-white text-black') : 'text-gray-500 hover:bg-gray-500/5'}`}>DEEP</button>
-                  <button onClick={() => setMode(AppMode.VOICE)} className={`w-full text-left px-5 py-3 rounded-2xl text-[10px] font-black tracking-widest transition-all ${mode === AppMode.VOICE ? (isLight ? 'bg-black text-white' : 'bg-white text-black') : 'text-gray-500 hover:bg-gray-500/5'}`}>VOICE</button>
-                </div>
-              )}
-            </div>
-
-            <div className="relative">
-              <button 
-                onClick={() => setIsHistoryOpen(!isHistoryOpen)}
-                onBlur={() => setTimeout(() => setIsHistoryOpen(false), 200)}
-                className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-gray-500 hover:text-indigo-500 transition-colors"
-              >
-                History
-                <svg className={`w-3 h-3 transition-transform duration-300 ${isHistoryOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" /></svg>
-              </button>
-              {isHistoryOpen && (
-                <div className={`absolute top-full mt-4 left-1/2 -translate-x-1/2 w-72 rounded-3xl shadow-2xl p-3 animate-in fade-in slide-in-from-top-2 duration-300 border ${isLight ? 'bg-white border-gray-100' : 'bg-[#1a1a1e] border-white/5'}`}>
-                  <div className="max-h-80 overflow-y-auto space-y-1 pr-1 scrollbar-hide">
-                    {sessions.map(s => (
-                      <button 
-                        key={s.id}
-                        onClick={() => { setCurrentSessionId(s.id); setIsHistoryOpen(false); }}
-                        className={`w-full text-left px-4 py-3 rounded-2xl text-xs font-bold truncate transition-all ${currentSessionId === s.id ? 'bg-indigo-500/10 text-indigo-500' : 'text-gray-500 hover:bg-gray-500/5'}`}
-                      >
-                        {s.title}
-                      </button>
-                    ))}
-                  </div>
-                  <div className={`border-t mt-2 pt-2 ${isLight ? 'border-gray-50' : 'border-white/5'}`}>
-                    <button onClick={handleNewChat} className={`w-full flex items-center justify-between px-4 py-3 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all ${isLight ? 'text-black hover:bg-gray-100' : 'text-white hover:bg-white/5'}`}>
-                      New directive
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" /></svg>
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <button onClick={() => setIsSettingsOpen(true)} className="text-xs font-black uppercase tracking-widest text-gray-500 hover:text-indigo-500 transition-colors">Settings</button>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3">
-              <span className={`text-[10px] font-black uppercase tracking-widest hidden sm:block ${isLight ? 'text-gray-400' : 'text-gray-600'}`}>{user.name}</span>
-              <img src={user.avatar} className="w-9 h-9 rounded-full border border-white/10 shadow-lg" alt="P" />
-            </div>
-            <div className={`h-6 w-px ${isLight ? 'bg-gray-200' : 'bg-white/10'}`} />
-            <button className="px-5 py-2.5 bg-[#dfff3d] hover:bg-[#cde538] text-black rounded-full text-[10px] font-black tracking-widest transition-all shadow-[0_10px_20px_rgba(223,255,61,0.2)] active:scale-95">
-              DOT PRO
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      <main className="flex-1 flex flex-col relative pt-24 overflow-hidden">
-        <div className="h-full">
-          {mode === AppMode.VOICE ? (
-            <VoiceInterface />
-          ) : (
-            <ChatInterface 
-              messages={currentSession?.messages || []}
-              setMessages={setMessages}
-              mode={mode}
-              useSearch={settings.showGrounding}
-              user={user}
-            />
-          )}
-        </div>
-      </main>
-
-      <SettingsModal 
-        isOpen={isSettingsOpen} 
-        onClose={() => setIsSettingsOpen(false)}
-        settings={settings}
-        onUpdateSettings={setSettings}
-        onClearHistory={handleClearHistory}
+    <div className="flex bg-black min-h-screen text-white overflow-hidden">
+      <BackgroundEffects settings={settings} />
+      <Sidebar 
+        onNavigate={(v) => { setActiveView(v); setIsQuizMode(false); setIsFlashcardMode(false); setQuizQuestions(null); }} 
+        activeView={activeView} 
+        isCollapsed={isSidebarCollapsed}
+        setIsCollapsed={setIsSidebarCollapsed}
       />
+      {/* Adjusted margin to match smaller sidebar */}
+      <main className="flex-1 transition-all duration-500 min-h-screen overflow-y-auto relative z-10 ml-20 md:ml-24">
+        {renderContent()}
+      </main>
     </div>
   );
 };

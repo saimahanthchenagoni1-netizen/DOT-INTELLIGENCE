@@ -1,46 +1,65 @@
 
-export enum AppMode {
-  CHAT = 'chat',
-  DEEP_THINK = 'deep-think',
-  VOICE = 'voice'
-}
-
 export interface User {
-  id: string;
-  name: string;
-  email?: string;
-  avatar?: string;
-  onboarded?: boolean;
+  username: string;
+  email: string;
 }
 
 export interface AppSettings {
-  theme: 'dark' | 'light';
-  modelQuality: 'fast' | 'high';
-  showGrounding: boolean;
-  clearHistoryOnLogout: boolean;
-  snowEnabled: boolean;
-  customCursorEnabled: boolean;
+  snowEffect: boolean;
+  mouseInteraction: boolean;
+  themeColor: 'cyan' | 'purple' | 'emerald' | 'gold';
 }
 
-export interface Message {
+export enum QuizDifficulty {
+  EASY = 'easy',
+  MEDIUM = 'medium',
+  HARD = 'hard'
+}
+
+export enum QuizType {
+  MULTIPLE_CHOICE = 'multiple_choice',
+  WRITING = 'writing'
+}
+
+export interface QuizQuestion {
+  id: number;
+  question: string;
+  options?: string[];
+  correctAnswer: string;
+  explanation: string;
+}
+
+export interface SavedQuiz {
   id: string;
-  role: 'user' | 'assistant';
+  title: string;
+  date: string;
+  score: number;
+  total: number;
+  questions: QuizQuestion[];
+  answers: Record<number, string>;
+}
+
+export interface Flashcard {
+  id: number;
+  front: string;
+  back: string;
+}
+
+export interface SavedFlashcardSet {
+  id: string;
+  title: string;
+  date: string;
+  cards: Flashcard[];
+}
+
+export interface ChatMessage {
+  role: 'user' | 'model';
+  text: string;
+}
+
+export interface SavedStudyGuide {
+  id: string;
+  title: string;
+  date: string;
   content: string;
-  timestamp: number;
-  isStreaming?: boolean;
-  groundingLinks?: GroundingLink[];
-  images?: string[];
-  thought?: string;
-}
-
-export interface GroundingLink {
-  title: string;
-  uri: string;
-}
-
-export interface ChatSession {
-  id: string;
-  title: string;
-  messages: Message[];
-  createdAt: number;
 }

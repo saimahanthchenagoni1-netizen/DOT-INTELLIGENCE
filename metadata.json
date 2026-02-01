@@ -1,7 +1,8 @@
 {
-  "name": "DOT AI",
-  "description": "The ultimate intelligence hub for deep reasoning and real-time knowledge.",
+  "name": "Dot AI - Your Personal Study Companion",
+  "description": "An AI-powered student assistant that explains any content and generates personalized quizzes and study guides to help you reach your dreams.",
   "requestFramePermissions": [
+    "camera",
     "microphone"
   ]
 }

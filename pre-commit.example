@@ -1,0 +1,48 @@
+#!/usr/bin/env node
+
+/**
+ * Pre-commit hook to prevent committing sensitive files
+ * Copy this to .git/hooks/pre-commit (without the .example extension)
+ * Make it executable: chmod +x .git/hooks/pre-commit
+ */
+
+const fs = require('fs');
+const path = require('path');
+const { execSync } = require('child_process');
+
+// Files that should never be committed
+const prohibitedFiles = [
+  '.env.local',
+  '.env',
+  '*.key',
+  '*.pem',
+];
+
+try {
+  // Get staged files
+  const stagedFiles = execSync('git diff --cached --name-only')
+    .toString()
+    .split('\n')
+    .filter(Boolean);
+
+  let hasProhibited = false;
+
+  stagedFiles.forEach(file => {
+    prohibitedFiles.forEach(pattern => {
+      if (file.includes(pattern) || path.basename(file).match(pattern)) {
+        console.error(`❌ Error: Attempting to commit sensitive file: ${file}`);
+        hasProhibited = true;
+      }
+    });
+  });
+
+  if (hasProhibited) {
+    console.error('\n⚠️  Commit blocked! Sensitive files detected.');
+    console.error('If this is intentional, use: git commit --no-verify');
+    process.exit(1);
+  }
+
+  console.log('✅ Pre-commit check passed');
+} catch (error) {
+  console.log('Pre-commit check skipped');
+}
